@@ -1,1 +1,0 @@
-../dialog_generate/main.py
