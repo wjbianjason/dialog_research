@@ -23,7 +23,7 @@ import seq2seq_lib
 
 class ModelParam(object):
     def __init__(self, mode, min_lr=0.01, lr= 0.15, batch_size=64, \
-      enc_layers=4,enc_timesteps=120,dec_timesteps=30,min_input_len=3,max_grad_norm=2,\
+      enc_layers=4,enc_timesteps=120,dec_timesteps=30,min_input_len=3,min_output_len=5,max_grad_norm=2,\
       num_hidden=256,emb_dim=128,num_softmax_samples=4096,model_file_name="",beam_size=4):
         self.mode=mode  # train, eval, decode
         self.min_lr=min_lr  # min learning rate.
@@ -33,6 +33,7 @@ class ModelParam(object):
         self.enc_timesteps=enc_timesteps
         self.dec_timesteps=dec_timesteps
         self.min_input_len=min_input_len  # discard articles/summaries < than this
+        self.min_output_len = min_output_len
         self.num_hidden=num_hidden  # for rnn cell
         self.emb_dim=emb_dim
         self.max_grad_norm=max_grad_norm

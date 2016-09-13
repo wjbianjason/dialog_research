@@ -128,18 +128,26 @@ class DataGenerator(object):
     	self.SENTENCE_END = vocab.WordToId(SENTENCE_END)
     	self.PAD_TOKEN = vocab.WordToId(PAD_TOKEN)
     	self.UNKNOWN_TOKEN = vocab.WordToId(UNKNOWN_TOKEN)
+        self.trainFile = ""
+        self.epoch_count = 0
   	# self.inputMaxLen = modelParam.enc_timesteps
   	# self.targetMaxlen = modelParam.dec_timesteps
   	
-  def iterSerializedData(self,filename):
-    for line in file(filename):
-        trainSingleData = line.strip().split("\t")
-        if len(trainSingleData) != 2:
-          continue
-        inputWords  = self.extractText(trainSingleData[0])
-        targetWords = self.extractText(trainSingleData[1], True)
-        if inputWords and targetWords:
-          yield (inputWords,targetWords,trainSingleData[0],trainSingleData[1])
+  def iterSerializedData(self):
+    filename = self.trainFile
+    while True:
+      try:
+        for line in file(filename):
+            trainSingleData = line.strip().split("\t")
+            if len(trainSingleData) != 2:
+              continue
+            inputWords  = trainSingleData[0].split()
+            targetWords = trainSingleData[1].split()
+            if len(inputWords) !=0 and len(targetWords) != 0 :
+              yield (inputWords,targetWords,trainSingleData[0],trainSingleData[1])
+      except:
+        self.epoch_count += 1
+        break
 
 
   def iterData(self):
@@ -159,7 +167,10 @@ class DataGenerator(object):
   	# word = word.lower() # or not lower
   	return self.vocab.WordToId(word)
 
-  def loadCorpus(self, fileName):
+  def loadCorpus(self, fileName,iterFlag=False):
+    if iterFlag:
+      self.trainFile = fileName
+      return
     # cornellData = CornellData(fileName)
     # conversations = cornellData.getConversations()
     # trainRawData = cornellData.getTrainRawData()
@@ -331,18 +342,25 @@ class Batcher(object):
     start_id = self._vocab.WordToId(SENTENCE_START)
     end_id = self._vocab.WordToId(SENTENCE_END)
     pad_id = self._vocab.WordToId(PAD_TOKEN)
-    input_gen = self._data_generator.iterData()
+    input_gen = self._data_generator.iterSerializedData()
     while True:
       (inputData, targetData,originInput,originTarget) = input_gen.next()
       enc_inputs = []
       # Use the <s> as the <GO> symbol for decoder inputs.
       dec_inputs = [start_id]
-      enc_inputs += inputData
-      dec_inputs += targetData
+      # enc_inputs += inputData
+      # dec_inputs += targetData
+
+      for word in inputData:
+        enc_inputs.append(self._vocab.WordToId(word))
+      for word in targetData:
+        dec_inputs.append(self._vocab.WordToId(word))
+
+
 
       # Filter out too-short input
       if (len(enc_inputs) < self._hps.min_input_len or
-          len(dec_inputs) < self._hps.min_input_len):
+          len(dec_inputs) < self._hps.min_output_len):
         # tf.logging.warning('Drop an example - too short.\nenc:%d\ndec:%d',
                            # len(enc_inputs), len(dec_inputs))
         continue
@@ -378,6 +396,9 @@ class Batcher(object):
       while len(targets) < self._hps.dec_timesteps:
         targets.append(end_id)
 
+
+      print ModelInput
+      exit(1)
       element = ModelInput(enc_inputs, dec_inputs, targets, enc_input_len,
                            dec_output_len, originInput,
                            originTarget)

@@ -12,8 +12,8 @@ import time
 from dialog.seq2seq_attention_decode import BSDecoder
 
 class ConfigParam(object):
-	def __init__(self,num_gpus=0,train_dir="./data",log_root="./data",checkpoint_secs=60,\
-		max_run_steps=10000000,eval_dir="./data",eval_interval_secs=60,decode_dir="./data",max_decode_steps=1000000,decode_batches_per_ckpt=8000):
+	def __init__(self,num_gpus=0,train_dir="./log",log_root="./log",checkpoint_secs=60,\
+		max_run_steps=10000000,eval_dir="./log",eval_interval_secs=60,decode_dir="./log",max_decode_steps=1000000,decode_batches_per_ckpt=8000,epoch=5):
 		self.num_gpus = num_gpus
 		self.train_dir = train_dir
 		self.log_root = log_root
@@ -24,6 +24,7 @@ class ConfigParam(object):
 		self.decode_dir = decode_dir
 		self.max_decode_steps = max_decode_steps
 		self.decode_batches_per_ckpt = decode_batches_per_ckpt
+		self.epoch = epoch
 
 
 
@@ -50,7 +51,7 @@ class DialogModel:
 		    	sess = sv.prepare_or_wait_for_session(config=tf.ConfigProto(allow_soft_placement=True,gpu_options=gpu_options))
 			running_avg_loss = 0
 			step = 0
-			while not sv.should_stop() and step < self._config_params.max_run_steps:
+			while not sv.should_stop() and step < self._config_params.max_run_steps and data_batcher._data_generator.epoch_count < self._config_params.epoch:
 			  (article_batch, abstract_batch, targets, article_lens, abstract_lens,
 			   loss_weights, _, _) = data_batcher.NextBatch()
 			  (_, summaries, loss, train_step) = model.run_train_step(
@@ -62,7 +63,8 @@ class DialogModel:
 			      running_avg_loss, loss, summary_writer, train_step)
 			  step += 1
 			  if step % 100 == 0:
-			    summary_writer.flush()
+			  	print "step:"+str(step)
+				summary_writer.flush()
 			sv.Stop()
 			return running_avg_loss	
 

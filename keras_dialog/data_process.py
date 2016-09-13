@@ -132,8 +132,8 @@ class DataGenerator(object):
       if iter_flag:
         return enc_inputs,dec_inputs
       else:
-        self.trainSamples.append(enc_inputs)
-        self.trainLabels.append(dec_inputs)
+        # self.trainSamples.append(enc_inputs)
+        # self.trainLabels.append(dec_inputs)
         self.count += 1
         
 
